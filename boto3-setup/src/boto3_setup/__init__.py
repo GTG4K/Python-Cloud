@@ -59,12 +59,46 @@ def create_bucket(aws_s3_client, bucket_name, region="us-east-1"):
     return True
 
 
+def delete_bucket(aws_s3_client, bucket_name):
+    if aws_s3_client is None:
+        return False
+
+    try:
+        aws_s3_client.delete_bucket(Bucket=bucket_name)
+    except ClientError as error:
+        logging.error(error)
+        return False
+
+    return True
+
+
+def bucket_exists(aws_s3_client, bucket_name):
+    if aws_s3_client is None:
+        return False
+
+    try:
+        response = aws_s3_client.head_bucket(Bucket=bucket_name)
+    except ClientError as error:
+        logging.error(error)
+        return False
+
+    status_code = response["ResponseMetadata"]["HTTPStatusCode"]
+    if status_code == 200:
+        return True
+
+    return False
+
+
 if __name__ == "__main__":
     s3_client = init_client()
     region = getenv("aws_region")
 
     bucket_name = f"boto3-setup-{uuid4().hex[:8]}"
     print(f"created bucket status: {create_bucket(s3_client, bucket_name, region)}")
+    print(f"Bucket exists: {bucket_exists(s3_client, bucket_name)}")
+    print(f"deleted bucket status: {delete_bucket(s3_client, bucket_name)}")
+    print(f"Bucket exists: {bucket_exists(s3_client, bucket_name)}")
+
     buckets = list_buckets(s3_client)
 
     if buckets:
