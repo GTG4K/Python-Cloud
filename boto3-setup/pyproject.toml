@@ -1,0 +1,19 @@
+[project]
+name = "boto3-setup"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Giorgi Tarkhnishvili",email = "madtitan2002@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "boto3 (>=1.43.108,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "boto3_setup", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
