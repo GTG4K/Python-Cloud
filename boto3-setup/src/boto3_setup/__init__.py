@@ -28,5 +28,22 @@ def init_client():
 
     return client
 
+
+def list_buckets(aws_s3_client):
+    if aws_s3_client is None:
+        return False
+
+    try:
+        return aws_s3_client.list_buckets()
+    except ClientError as error:
+        logging.error(error)
+        return False
+
+
 if __name__ == "__main__":
     s3_client = init_client()
+    buckets = list_buckets(s3_client)
+
+    if buckets:
+        for bucket in buckets["Buckets"]:
+            print(f" {bucket['Name']}")
