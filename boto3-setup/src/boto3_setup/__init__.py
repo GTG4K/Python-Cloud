@@ -1,5 +1,9 @@
+import io
 import logging
+from hashlib import md5
 from os import getenv
+from time import localtime
+from urllib.request import urlopen
 from uuid import uuid4
 
 import boto3
@@ -89,6 +93,40 @@ def bucket_exists(aws_s3_client, bucket_name):
     return False
 
 
+def download_file_and_upload_to_s3(
+    aws_s3_client,
+    bucket_name,
+    url,
+    file_name,
+    keep_local=False,
+):
+    if aws_s3_client is None:
+        return False
+
+    with urlopen(url) as response:
+        content = response.read()
+
+    try:
+        aws_s3_client.upload_fileobj(
+            Fileobj=io.BytesIO(content),
+            Bucket=bucket_name,
+            Key=file_name,
+        )
+    except Exception as error:
+        logging.error(error)
+        return False
+
+    if keep_local:
+        with open(file_name, mode="wb") as image_file:
+            image_file.write(content)
+
+    region = getenv("aws_region")
+    if region == "us-east-1":
+        return f"https://s3.amazonaws.com/{bucket_name}/{file_name}"
+
+    return f"https://s3-{region}.amazonaws.com/{bucket_name}/{file_name}"
+
+
 if __name__ == "__main__":
     s3_client = init_client()
     region = getenv("aws_region")
@@ -96,8 +134,19 @@ if __name__ == "__main__":
     bucket_name = f"boto3-setup-{uuid4().hex[:8]}"
     print(f"created bucket status: {create_bucket(s3_client, bucket_name, region)}")
     print(f"Bucket exists: {bucket_exists(s3_client, bucket_name)}")
-    print(f"deleted bucket status: {delete_bucket(s3_client, bucket_name)}")
-    print(f"Bucket exists: {bucket_exists(s3_client, bucket_name)}")
+
+    file_name = f"image_file_{md5(str(localtime()).encode('utf-8')).hexdigest()}.jpg"
+    image_url = "https://www.coreldraw.com/static/cdgs/images/free-trials/img-ui-cdgsx.jpg"
+    
+    print(
+        download_file_and_upload_to_s3(
+            s3_client,
+            bucket_name,
+            image_url,
+            file_name,
+            keep_local=True,
+        )
+    )
 
     buckets = list_buckets(s3_client)
 
