@@ -18,7 +18,6 @@ def init_client():
             region_name=getenv("aws_region"),
         )
         client.list_buckets()
-
     except ClientError as error:
         logging.error(error)
         return None
@@ -40,8 +39,30 @@ def list_buckets(aws_s3_client):
         return False
 
 
+def create_bucket(aws_s3_client, bucket_name, region="us-east-1"):
+    if aws_s3_client is None:
+        return False
+
+    try:
+        if region == "us-east-1":
+            aws_s3_client.create_bucket(Bucket=bucket_name)
+        else:
+            aws_s3_client.create_bucket(
+                Bucket=bucket_name,
+                CreateBucketConfiguration={"LocationConstraint": region},
+            )
+    except ClientError as error:
+        logging.error(error)
+        return False
+
+    return True
+
+
 if __name__ == "__main__":
     s3_client = init_client()
+    region = getenv("aws_region")
+
+    print(f"created bucket status: {create_bucket(s3_client, 'new-bucket-btu', region)}")
     buckets = list_buckets(s3_client)
 
     if buckets:
