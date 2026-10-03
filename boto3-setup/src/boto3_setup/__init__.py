@@ -127,6 +127,27 @@ def download_file_and_upload_to_s3(
     return f"https://s3-{region}.amazonaws.com/{bucket_name}/{file_name}"
 
 
+def set_object_access_policy(aws_s3_client, bucket_name, file_name):
+    if aws_s3_client is None:
+        return False
+
+    try:
+        response = aws_s3_client.put_object_acl(
+            ACL="public-read",
+            Bucket=bucket_name,
+            Key=file_name,
+        )
+    except ClientError as error:
+        logging.error(error)
+        return False
+
+    status_code = response["ResponseMetadata"]["HTTPStatusCode"]
+    if status_code == 200:
+        return True
+
+    return False
+
+
 if __name__ == "__main__":
     s3_client = init_client()
     region = getenv("aws_region")
@@ -136,8 +157,10 @@ if __name__ == "__main__":
     print(f"Bucket exists: {bucket_exists(s3_client, bucket_name)}")
 
     file_name = f"image_file_{md5(str(localtime()).encode('utf-8')).hexdigest()}.jpg"
-    image_url = "https://www.coreldraw.com/static/cdgs/images/free-trials/img-ui-cdgsx.jpg"
-    
+
+    # funny crow
+    image_url = "https://thumbs.dreamstime.com/b/crow-standing-bench-iage-corvus-surrey-england-326402189.jpg"
+
     print(
         download_file_and_upload_to_s3(
             s3_client,
@@ -146,6 +169,10 @@ if __name__ == "__main__":
             file_name,
             keep_local=True,
         )
+    )
+
+    print(
+        f"set read status: {set_object_access_policy(s3_client, bucket_name, file_name)}"
     )
 
     buckets = list_buckets(s3_client)
